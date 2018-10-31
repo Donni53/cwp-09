@@ -60,33 +60,55 @@ Promise.any([axios.get(populationBelarus2015), axios.get(populationBelarus2016)]
     console.error("Promise.any ERROR " + error);
 });
 
-/*Promise.props({
-    test: axios.get(""),
-    tset: axios.get("")
-}).then((result) => {
-    console.log();
-    console.log("Promise.props");
-    Object.values(result).forEach((prop) => {
-        prop.data.results.forEach((val) => {
-            console.log(val.name);
-        });
-    })
-
-    return
-}).catch((error) => {
-    console.error(error);
+let population = axios.create({
+    baseURL: 'http://api.population.io:80/1.0/mortality-distribution/',
 });
-*/
 
-let arr = [1,2,3,4,5];
+let urlsGreece = [];
+let urlsTurkey= [];
 
-Promise.map(arr, (id) => {
-    return axios.get("http://api.population.io:80/1.0/countries");
-}).then((res) => {
-    console.log("Promise.map");
-    res.forEach((obj) => {
-        console.log(obj.countries);
-    });
-}).catch((error => {
-    console.error("Promise.map ERROR " + error);
-}))
+urlsGreece.push(`Greece/male/0/today/`);
+urlsTurkey.push(`Turkey/male/0/today/`);
+urlsGreece.push(`Greece/female/0/today/`);
+urlsTurkey.push(`Turkey/female/0/today/`);
+
+
+Promise.props({
+    greece: Promise.all(urlsGreece.map(population.get)),
+    turkey: Promise.all(urlsTurkey.map(population.get))
+})
+    .then(result=>
+        {
+            let maxGreece = 0;
+            let maxTurkey = 0;
+            let maxMortAgeGreece = 0;
+            let maxMortAgeTurkey = 0;
+            for(let j = 0; j < 2; j++)
+            {
+                for(let iter = 0; iter < result.greece[j].data.mortality_distribution.length; iter++)
+                {
+                    if (result.greece[j].data.mortality_distribution[iter].mortality_percent > maxGreece)
+                    {
+                        maxGreece = result.greece[j].data.mortality_distribution[iter].mortality_percent;
+                        maxMortAgeGreece = result.greece[j].data.mortality_distribution[iter].age;
+                    }
+                }
+                for(let iter = 0; iter < result.turkey[j].data.mortality_distribution.length; iter++)
+                {
+                    if (result.turkey[j].data.mortality_distribution[iter].mortality_percent > maxTurkey)
+                    {
+                        maxTurkey = result.turkey[j].data.mortality_distribution[iter].mortality_percent;
+                        maxMortAgeTurkey = result.turkey[j].data.mortality_distribution[iter].age;
+                    }
+                }
+                console.log();
+                console.log("Promise.props");
+                console.log("Греция ");
+                console.log(maxMortAgeGreece);
+                console.log("Турция ");
+                console.log(maxMortAgeTurkey);
+            }
+
+
+        }
+    );
